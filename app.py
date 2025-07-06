@@ -100,7 +100,7 @@ if selected_categories:
 st.divider()
 st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
 
-    if "Category" in merged_df.columns:
+if "Category" in merged_df.columns:
         summary = merged_df.groupby("Category").agg(
             Total_RU_Score=("RU Score", "sum"),
             Total_Opp_Loss_Baht=("Opp. Loss (Baht)", "sum")
