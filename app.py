@@ -1,6 +1,7 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 st.title("🧮 Smart Reorder Tool")
 
@@ -8,8 +9,6 @@ st.markdown("### ℹ️ เกี่ยวกับ Reorder Urgency Score")
 st.markdown("""
 **Reorder Urgency Score** คือคะแนนที่บอกระดับความเร่งด่วนในการสั่งซื้อสินค้าใหม่ หากสินค้าหมดสต็อก  
 - ถ้า **คะแนนสูงมาก** → สินค้าตัวนี้สำคัญ! ถ้าขาดสต็อกจะ **เสียโอกาสกำไร** มาก  
-- คำนวณจาก:  
-**Reorder Urgency Score = กำไรเฉลี่ยต่อวัน ÷ จำนวนวันที่สินค้าจะยังพอขายได้ (Days Coverage)**
 """)
 
 uploaded_file = st.file_uploader("📤 Upload Sales CSV file", type=["csv"])
@@ -63,6 +62,12 @@ if uploaded_file and uploaded_stock:
 
     merged_df[["สถานะ", "Reorder_Urgency_Score"]] = merged_df.apply(compute_status_and_score, axis=1, result_type="expand")
 
+    # ไม่แสดง "ไม่มียอดขาย Stock = 0"
+    merged_df = merged_df[merged_df["สถานะ"] != "ไม่มียอดขาย Stock = 0"]
+
+    # เพิ่มคอลัมน์ควรสั่งซื้อกี่ชิ้น
+    merged_df["ควรสั่งซื้อเพิ่ม (ชิ้น)"] = (merged_df["avg_sales_per_day"] * days - merged_df["คงเหลือ"]).apply(lambda x: max(0, int(np.ceil(x))))
+
     # Filter by selected categories
     if "Category" in merged_df.columns:
         available_categories = merged_df["Category"].dropna().unique().tolist()
@@ -78,7 +83,7 @@ if uploaded_file and uploaded_stock:
 
         for cat in summary["Category"]:
             cat_df = merged_df[merged_df["Category"] == cat]
-            cat_df_display = cat_df[["Name", "SKU", "สถานะ", "Reorder_Urgency_Score"]]
+            cat_df_display = cat_df[["Name", "SKU", "สถานะ", "Reorder_Urgency_Score", "ควรสั่งซื้อเพิ่ม (ชิ้น)"]]
             total_score = cat_df["Reorder_Urgency_Score"].sum()
             st.markdown(f"#### 🗂️ {cat} (รวม Reorder Urgency Score: {total_score:,.2f})")
             st.dataframe(cat_df_display.reset_index(drop=True))
