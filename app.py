@@ -30,6 +30,8 @@ with run_center:
     run_analysis = st.button("▶️ Run Analysis")
 
 if run_analysis and uploaded_file and uploaded_stock:
+    sales_df = pd.read_csv(uploaded_file)
+    stock_df = pd.read_csv(uploaded_stock)
     selected_categories = []
     try:
         if 'Category' in stock_df.columns:
@@ -43,8 +45,6 @@ if run_analysis and uploaded_file and uploaded_stock:
             )
     except Exception as e:
         st.warning('ไม่สามารถอ่านข้อมูลหมวดหมู่จากไฟล์ได้')
-    sales_df = pd.read_csv(uploaded_file)
-    stock_df = pd.read_csv(uploaded_stock)
     selected_categories = []
     try:
         if 'Category' in stock_df.columns:
