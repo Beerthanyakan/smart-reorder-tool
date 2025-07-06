@@ -45,6 +45,19 @@ if run_analysis and uploaded_file and uploaded_stock:
         st.warning('ไม่สามารถอ่านข้อมูลหมวดหมู่จากไฟล์ได้')
     sales_df = pd.read_csv(uploaded_file)
     stock_df = pd.read_csv(uploaded_stock)
+    selected_categories = []
+    try:
+        if 'Category' in stock_df.columns:
+            available_categories = stock_df['Category'].dropna().unique().tolist()
+            default_exclude = ['Bird', 'Online selling', 'แลกแต้ม', 'อาบน้ำแมว']
+            default_include = [cat for cat in available_categories if cat not in default_exclude]
+            selected_categories = category_selection_placeholder.multiselect(
+                '📂 เลือก Category ที่จะแสดง',
+                options=available_categories,
+                default=default_include
+            )
+    except Exception as e:
+        st.warning('ไม่สามารถอ่านข้อมูลหมวดหมู่จากไฟล์ได้')
 
     stock_df = stock_df.rename(columns={"In stock [I-animal]": "คงเหลือ", "Cost": "ต้นทุนเฉลี่ย/ชิ้น"})
     stock_df["คงเหลือ"] = stock_df["คงเหลือ"].fillna(0)
