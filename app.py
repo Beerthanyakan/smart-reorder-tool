@@ -4,12 +4,12 @@ import pandas as pd
 
 st.title("🧮 Smart Reorder Tool")
 
-st.markdown("### ℹ️ เกี่ยวกับ Loss Risk Score")
+st.markdown("### ℹ️ เกี่ยวกับ Reorder Urgency Score")
 st.markdown("""
-**Loss Risk Score** คือคะแนนที่บอกระดับความเสี่ยงในการเสียโอกาสกำไรหากสินค้าหมดสต็อก  
+**Reorder Urgency Score** คือคะแนนที่บอกระดับความเร่งด่วนในการสั่งซื้อสินค้าใหม่ หากสินค้าหมดสต็อก  
 - ถ้า **คะแนนสูงมาก** → สินค้าตัวนี้สำคัญ! ถ้าขาดสต็อกจะ **เสียโอกาสกำไร** มาก  
 - คำนวณจาก:  
-**Loss Risk Score = กำไรเฉลี่ยต่อวัน ÷ จำนวนวันที่สินค้าจะยังพอขายได้ (Days Coverage)**
+**Reorder Urgency Score = กำไรเฉลี่ยต่อวัน ÷ จำนวนวันที่สินค้าจะยังพอขายได้ (Days Coverage)**
 """)
 
 uploaded_file = st.file_uploader("📤 Upload Sales CSV file", type=["csv"])
@@ -61,23 +61,24 @@ if uploaded_file and uploaded_stock:
             score = row["avg_profit_per_day"] / row["days_coverage"] if row["days_coverage"] else 0
             return f"{row['days_coverage']:.1f} วัน", score
 
-    merged_df[["สถานะ", "Loss_Risk_Score"]] = merged_df.apply(compute_status_and_score, axis=1, result_type="expand")
+    merged_df[["สถานะ", "Reorder_Urgency_Score"]] = merged_df.apply(compute_status_and_score, axis=1, result_type="expand")
 
-    # Filter out unwanted categories
-    categories_to_exclude = ["promotion"]
+    # Filter by selected categories
     if "Category" in merged_df.columns:
-        merged_df = merged_df[~merged_df["Category"].isin(categories_to_exclude)]
+        available_categories = merged_df["Category"].dropna().unique().tolist()
+        selected_cats = st.multiselect("📂 เลือกหมวดหมู่ที่จะแสดง", available_categories, default=[cat for cat in available_categories if cat.lower() != "promotion"])
+        merged_df = merged_df[merged_df["Category"].isin(selected_cats)]
 
-    merged_df = merged_df.sort_values(by="Loss_Risk_Score", ascending=False)
+    merged_df = merged_df.sort_values(by="Reorder_Urgency_Score", ascending=False)
 
     st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
     if "Category" in merged_df.columns:
-        summary = merged_df.groupby("Category").agg(Total_Loss_Risk_Score=("Loss_Risk_Score", "sum")).reset_index()
+        summary = merged_df.groupby("Category").agg(Total_Reorder_Urgency_Score=("Reorder_Urgency_Score", "sum")).reset_index()
         st.dataframe(summary)
 
         for cat in summary["Category"]:
             cat_df = merged_df[merged_df["Category"] == cat]
-            cat_df_display = cat_df[["Name", "SKU", "สถานะ", "Loss_Risk_Score"]]
-            total_score = cat_df["Loss_Risk_Score"].sum()
-            st.markdown(f"#### 🗂️ {cat} (รวม Loss Risk Score: {total_score:,.2f})")
+            cat_df_display = cat_df[["Name", "SKU", "สถานะ", "Reorder_Urgency_Score"]]
+            total_score = cat_df["Reorder_Urgency_Score"].sum()
+            st.markdown(f"#### 🗂️ {cat} (รวม Reorder Urgency Score: {total_score:,.2f})")
             st.dataframe(cat_df_display.reset_index(drop=True))
