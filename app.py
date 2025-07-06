@@ -4,17 +4,14 @@ import pandas as pd
 
 st.title("🧮 Smart Reorder Tool")
 
-uploaded_file = st.file_uploader("📤 Upload Sales Excel file (.xlsx)", type=["xlsx"])
+uploaded_file = st.file_uploader("📤 Upload Sales CSV file", type=["csv"])
 uploaded_stock = st.file_uploader("📤 Upload Inventory CSV (.csv)", type=["csv"])
 
 days = st.number_input("📅 วางแผนล่วงหน้า (วัน)", value=45, min_value=1)
 
 if uploaded_file and uploaded_stock:
-    sales_df = pd.read_excel(uploaded_file, sheet_name=None)
+    sales_data = pd.read_csv(uploaded_file)
     stock_df = pd.read_csv(uploaded_stock)
-
-    sheet_name = [name for name in sales_df if "item-sales" in name][0]
-    sales_data = sales_df[sheet_name]
 
     stock_df = stock_df.rename(columns={"In stock [I-animal]": "คงเหลือ", "Cost": "ต้นทุนเฉลี่ย/ชิ้น"})
     stock_df["คงเหลือ"] = stock_df["คงเหลือ"].fillna(0)
@@ -57,7 +54,22 @@ if uploaded_file and uploaded_stock:
             return f"{row['days_coverage']:.1f} วัน", score
 
     merged_df[["สถานะ", "Loss_Risk_Score"]] = merged_df.apply(compute_status_and_score, axis=1, result_type="expand")
+
+    # Filter out unwanted categories
+    categories_to_exclude = ["Online selling", "promotion", "แลกแต้ม", "อาบน้ำแมว"]
+    if "Category" in merged_df.columns:
+        merged_df = merged_df[~merged_df["Category"].isin(categories_to_exclude)]
+
     merged_df = merged_df.sort_values(by="Loss_Risk_Score", ascending=False)
 
+    show_cols = ["Name", "SKU", "Category", "สถานะ", "Loss_Risk_Score"]
+    existing_cols = [col for col in show_cols if col in merged_df.columns]
+    display_df = merged_df[existing_cols]
+
+    sort_col = st.selectbox("🔽 Sort by column", options=existing_cols, index=existing_cols.index("Loss_Risk_Score"))
+    sort_dir = st.radio("Order", ["Descending", "Ascending"])
+
+    sorted_df = display_df.sort_values(by=sort_col, ascending=(sort_dir == "Ascending"))
+
     st.success("📊 ตารางวิเคราะห์ความเสี่ยง (Loss Risk Score):")
-    st.dataframe(merged_df)
+    st.dataframe(sorted_df.reset_index(drop=True))
