@@ -23,9 +23,9 @@ with right_col:
     """)
 
     category_selection_placeholder = st.empty()
+    run_analysis = st.button("▶️ Run Analysis")
 
 # Add Run button
-run_analysis = st.button("▶️ Run Analysis")
 
 if run_analysis and uploaded_file and uploaded_stock:
     sales_df = pd.read_csv(uploaded_file)
