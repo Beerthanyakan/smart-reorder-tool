@@ -98,7 +98,7 @@ if run_analysis and uploaded_file and uploaded_stock:
 
         st.markdown(f"**🔢 RU Score รวม: {summary['Total_RU_Score'].sum():,.2f}**")
         st.markdown(f"**💸 ค่าความเสียโอกาสรวม: {summary['Total_Opp_Loss_Baht'].sum():,.2f} บาท**")
-        st.dataframe(summary, use_container_width=True)
+        st.dataframe(summary[["Category", "Total_RU_Score", "Total_Opp_Loss_Baht"]], use_container_width=True)
 
         category_list = summary.sort_values("Total_RU_Score", ascending=False)["Category"]
         for cat in category_list:
