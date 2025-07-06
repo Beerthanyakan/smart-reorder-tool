@@ -23,13 +23,11 @@ with right_col:
     """)
     category_selection_placeholder = st.empty()
 
-# Centered Run Button
 st.markdown("### ")
 run_center = st.columns([2, 1, 2])[1]
 with run_center:
     run_analysis = st.button("▶️ Run Analysis")
 
-# Run logic and display
 if run_analysis and uploaded_file and uploaded_stock:
     sales_df = pd.read_csv(uploaded_file)
     stock_df = pd.read_csv(uploaded_stock)
@@ -79,7 +77,12 @@ if run_analysis and uploaded_file and uploaded_stock:
 
     merged_df["ควรสั่งซื้อเพิ่ม (ชิ้น)"] = (merged_df["avg_sales_per_day"] * stock_days - merged_df["คงเหลือ"]).apply(lambda x: max(0, int(np.ceil(x))))
     merged_df["RU Score"] = merged_df["RU Score"].astype(float).round(1)
-    merged_df["วันที่ไม่มีของขาย"] = (reorder_days - merged_df["Stock Coverage (Day)"]).apply(lambda x: max(0, int(np.ceil(x))))
+
+    # ✅ FIX: Handle missing/NaN in Stock Coverage safely
+    merged_df["วันที่ไม่มีของขาย"] = merged_df["Stock Coverage (Day)"].apply(
+        lambda x: max(0, int(np.ceil(reorder_days - x))) if pd.notna(x) else 0
+    )
+
     merged_df["Opp. Loss (Baht)"] = (merged_df["avg_profit_per_day"] * merged_df["วันที่ไม่มีของขาย"]).round(2)
 
     if "Category" in merged_df.columns:
