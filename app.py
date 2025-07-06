@@ -43,6 +43,8 @@ with run_center:
     run_analysis = st.button("▶️ Run Analysis")
 
 if run_analysis and uploaded_file and uploaded_stock:
+    if selected_categories:
+        merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
     sales_df = pd.read_csv(uploaded_file)
     stock_df = pd.read_csv(uploaded_stock)
 
@@ -96,8 +98,6 @@ if run_analysis and uploaded_file and uploaded_stock:
 
     
 if selected_categories:
-    merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
-    merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
 st.divider()
 st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
 
