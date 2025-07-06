@@ -6,16 +6,16 @@ import numpy as np
 st.set_page_config(layout="wide")
 st.title("🧮 Smart Reorder Tool")
 
-# === LAYOUT: LEFT / RIGHT ===
-left_col, right_col = st.columns([1, 1])
+# --- LEFT COLUMN ---
+left, right = st.columns([1, 1])
 
-with left_col:
+with left:
     uploaded_file = st.file_uploader("📤 Upload \"Sales by item\" file (.CSV)", type=["csv"])
     uploaded_stock = st.file_uploader("📤 Upload \"Inventory\" File (.CSV)", type=["csv"])
     stock_days = st.number_input("📦 Stock Coverage (Day)", value=45, min_value=1)
     reorder_days = st.number_input("🔁 สั่งของอีกครั้งในอีกกี่วัน", value=7, min_value=1)
 
-with right_col:
+with right:
     st.markdown("### ℹ️ RU Score (Reorder Urgency)")
 
 if uploaded_file and uploaded_stock:
@@ -64,12 +64,13 @@ if uploaded_file and uploaded_stock:
 
     merged_df[["สถานะ", "RU Score"]] = merged_df.apply(compute_status_and_score, axis=1, result_type="expand")
 
-    # Remove "ไม่มียอดขาย Stock = 0"
+    # ไม่แสดง "ไม่มียอดขาย Stock = 0"
     merged_df = merged_df[merged_df["สถานะ"] != "ไม่มียอดขาย Stock = 0"]
 
-    # คำนวณจำนวนควรสั่งเพิ่ม
     merged_df["ควรสั่งซื้อเพิ่ม (ชิ้น)"] = (merged_df["avg_sales_per_day"] * stock_days - merged_df["คงเหลือ"]).apply(lambda x: max(0, int(np.ceil(x))))
+
     merged_df["RU Score"] = merged_df["RU Score"].astype(float).round(1)
+
     merged_df["วันที่ไม่มีของขาย"] = (reorder_days - merged_df["Stock Coverage (Day)"]).apply(lambda x: max(0, int(np.ceil(x))))
     merged_df["Opp. Loss (Baht)"] = (merged_df["avg_profit_per_day"] * merged_df["วันที่ไม่มีของขาย"]).round(2)
 
@@ -77,12 +78,11 @@ if uploaded_file and uploaded_stock:
         available_categories = merged_df["Category"].dropna().unique().tolist()
         default_exclude = ["Bird", "Online selling", "แลกแต้ม", "อาบน้ำแมว"]
         default_include = [cat for cat in available_categories if cat not in default_exclude]
-        selected_categories = right_col.multiselect("📂 เลือก Category ที่จะแสดง", available_categories, default=default_include)
+        selected_categories = right.multiselect("📂 เลือก Category ที่จะแสดง", available_categories, default=default_include)
         merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
 
     st.divider()
     st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
-
     if "Category" in merged_df.columns:
         summary = merged_df.groupby("Category").agg(Total_RU_Score=("RU Score", "sum")).reset_index()
         st.dataframe(summary)
