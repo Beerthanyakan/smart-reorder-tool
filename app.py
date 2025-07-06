@@ -98,7 +98,7 @@ if run_analysis and uploaded_file and uploaded_stock:
 if selected_categories:
     merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
 st.divider()
-    st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
+st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
 
     if "Category" in merged_df.columns:
         summary = merged_df.groupby("Category").agg(
