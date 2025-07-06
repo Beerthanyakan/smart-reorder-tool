@@ -23,20 +23,6 @@ with right_col:
     """)
     category_selection_placeholder = st.empty()
 
-selected_categories = []
-if uploaded_file and uploaded_stock:
-    tmp_stock_df = pd.read_csv(uploaded_stock)
-    if "Category" in tmp_stock_df.columns:
-        available_categories = tmp_stock_df["Category"].dropna().unique().tolist()
-        default_exclude = ["Bird", "Online selling", "แลกแต้ม", "อาบน้ำแมว"]
-        default_include = [cat for cat in available_categories if cat not in default_exclude]
-        selected_categories = category_selection_placeholder.multiselect(
-            "📂 เลือก Category ที่จะแสดง",
-            available_categories,
-            default=default_include
-        )
-
-
 st.markdown("### ")
 run_center = st.columns([2, 1, 2])[1]
 with run_center:
@@ -94,14 +80,17 @@ if run_analysis and uploaded_file and uploaded_stock:
     merged_df["วันที่ไม่มีของขาย"] = merged_df["Stock Coverage (Day)"].apply(lambda x: max(0, int(np.ceil(reorder_days - x))) if pd.notna(x) else 0)
     merged_df["Opp. Loss (Baht)"] = (merged_df["avg_profit_per_day"] * merged_df["วันที่ไม่มีของขาย"]).round(2)
 
-    
-if selected_categories:
-if selected_categories:
-    merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
-st.divider()
-st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
+    if "Category" in merged_df.columns:
+        available_categories = merged_df["Category"].dropna().unique().tolist()
+        default_exclude = ["Bird", "Online selling", "แลกแต้ม", "อาบน้ำแมว"]
+        default_include = [cat for cat in available_categories if cat not in default_exclude]
+        selected_categories = category_selection_placeholder.multiselect("📂 เลือก Category ที่จะแสดง", available_categories, default=default_include)
+        merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
 
-if "Category" in merged_df.columns:
+    st.divider()
+    st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
+
+    if "Category" in merged_df.columns:
         summary = merged_df.groupby("Category").agg(
             Total_RU_Score=("RU Score", "sum"),
             Total_Opp_Loss_Baht=("Opp. Loss (Baht)", "sum")
