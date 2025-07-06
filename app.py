@@ -77,12 +77,7 @@ if run_analysis and uploaded_file and uploaded_stock:
 
     merged_df["ควรสั่งซื้อเพิ่ม (ชิ้น)"] = (merged_df["avg_sales_per_day"] * stock_days - merged_df["คงเหลือ"]).apply(lambda x: max(0, int(np.ceil(x))))
     merged_df["RU Score"] = merged_df["RU Score"].astype(float).round(1)
-
-    # ✅ FIX: Handle missing/NaN in Stock Coverage safely
-    merged_df["วันที่ไม่มีของขาย"] = merged_df["Stock Coverage (Day)"].apply(
-        lambda x: max(0, int(np.ceil(reorder_days - x))) if pd.notna(x) else 0
-    )
-
+    merged_df["วันที่ไม่มีของขาย"] = merged_df["Stock Coverage (Day)"].apply(lambda x: max(0, int(np.ceil(reorder_days - x))) if pd.notna(x) else 0)
     merged_df["Opp. Loss (Baht)"] = (merged_df["avg_profit_per_day"] * merged_df["วันที่ไม่มีของขาย"]).round(2)
 
     if "Category" in merged_df.columns:
@@ -96,15 +91,19 @@ if run_analysis and uploaded_file and uploaded_stock:
     st.subheader("📂 สรุปความเสี่ยงรวมตามหมวดสินค้า (Category Summary)")
 
     if "Category" in merged_df.columns:
-        summary = merged_df.groupby("Category").agg(Total_RU_Score=("RU Score", "sum")).reset_index()
-        st.dataframe(summary)
+        summary = merged_df.groupby("Category").agg(
+            Total_RU_Score=("RU Score", "sum"),
+            Total_Opp_Loss_Baht=("Opp. Loss (Baht)", "sum")
+        ).reset_index()
+
+        st.markdown(f"**🔢 RU Score รวม: {summary['Total_RU_Score'].sum():,.2f}**")
+        st.markdown(f"**💸 ค่าความเสียโอกาสรวม: {summary['Total_Opp_Loss_Baht'].sum():,.2f} บาท**")
+        st.dataframe(summary, use_container_width=True)
 
         category_list = summary.sort_values("Total_RU_Score", ascending=False)["Category"]
         for cat in category_list:
             cat_df = merged_df[merged_df["Category"] == cat].copy()
             cat_df = cat_df.sort_values(by="RU Score", ascending=False).reset_index(drop=True)
-            cat_df.index += 1
             display_df = cat_df[["Name", "ควรสั่งซื้อเพิ่ม (ชิ้น)", "สถานะ", "RU Score", "Opp. Loss (Baht)"]].copy()
-            display_df.insert(0, "No.", display_df.index)
             st.markdown(f"#### 🗂️ {cat} (RU Score = {cat_df['RU Score'].sum():,.2f})")
-            st.dataframe(display_df)
+            st.dataframe(display_df, use_container_width=True)
