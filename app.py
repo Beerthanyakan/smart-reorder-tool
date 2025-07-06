@@ -23,12 +23,26 @@ with right_col:
     """)
     category_selection_placeholder = st.empty()
 
+
 st.markdown("### ")
 run_center = st.columns([2, 1, 2])[1]
 with run_center:
     run_analysis = st.button("▶️ Run Analysis")
 
 if run_analysis and uploaded_file and uploaded_stock:
+    selected_categories = []
+    try:
+        if 'Category' in stock_df.columns:
+            available_categories = stock_df['Category'].dropna().unique().tolist()
+            default_exclude = ['Bird', 'Online selling', 'แลกแต้ม', 'อาบน้ำแมว']
+            default_include = [cat for cat in available_categories if cat not in default_exclude]
+            selected_categories = category_selection_placeholder.multiselect(
+                '📂 เลือก Category ที่จะแสดง',
+                options=available_categories,
+                default=default_include
+            )
+    except Exception as e:
+        st.warning('ไม่สามารถอ่านข้อมูลหมวดหมู่จากไฟล์ได้')
     sales_df = pd.read_csv(uploaded_file)
     stock_df = pd.read_csv(uploaded_stock)
 
@@ -81,10 +95,6 @@ if run_analysis and uploaded_file and uploaded_stock:
     merged_df["Opp. Loss (Baht)"] = (merged_df["avg_profit_per_day"] * merged_df["วันที่ไม่มีของขาย"]).round(2)
 
     if "Category" in merged_df.columns:
-        available_categories = merged_df["Category"].dropna().unique().tolist()
-        default_exclude = ["Bird", "Online selling", "แลกแต้ม", "อาบน้ำแมว"]
-        default_include = [cat for cat in available_categories if cat not in default_exclude]
-        selected_categories = category_selection_placeholder.multiselect("📂 เลือก Category ที่จะแสดง", available_categories, default=default_include)
         merged_df = merged_df[merged_df["Category"].isin(selected_categories)]
 
     st.divider()
